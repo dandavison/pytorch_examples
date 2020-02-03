@@ -77,19 +77,29 @@ class MnistLogistic(nn.Module):
         yhat = torch.argmax(Yp, dim=1)
         return (yhat == y).float().mean()
 
-    def fit(self, X_train, y_train):
+    def fit(self, X_train, y_train, X_valid, y_valid):
         lr = 0.5  # learning rate
         epochs = 2  # how many epochs to train for
         n, d = X_train.shape
         n_batch = 64
 
-        train_dl = DataLoader(TensorDataset(X_train, y_train), batch_size=n_batch)
+        train_dl = DataLoader(TensorDataset(X_train, y_train), batch_size=n_batch, shuffle=True)
+        valid_dl = DataLoader(TensorDataset(X_valid, y_valid), batch_size=n_batch * 2)
 
         opt = optim.SGD(self.parameters(), lr=lr)
 
         for epoch in range(epochs):
+            self.train()
             for X_, y_ in train_dl:
                 loss = self.loss_fn(self(X_), y_)
                 loss.backward()
                 opt.step()
                 opt.zero_grad()
+
+            self.eval()
+            with torch.no_grad():
+                valid_loss = sum(self.loss_fn(self(X_), y_) for (X_, y_) in valid_dl) / len(
+                    valid_dl
+                )
+
+            print("validation loss", epoch, valid_loss)

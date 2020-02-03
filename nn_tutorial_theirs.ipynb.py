@@ -305,7 +305,7 @@ import nn_tutorial as nt
 
 torch.manual_seed(RNG_SEED)
 model = nt.MnistLogistic()
-model.fit(x_train, y_train)
+model.fit(x_train, y_train, x_valid, y_valid)
 print(model.loss_fn(model(xb), yb), model.accuracy(model(xb), yb))
 
 # Using torch.nn.functional
