@@ -8,6 +8,7 @@ import requests
 import torch
 import torch.nn.functional as F
 from torch import nn
+from torch import optim
 
 
 def get_data():
@@ -80,6 +81,8 @@ class MnistLogistic(nn.Module):
         n, d = X.shape
         n_batch = 64
 
+        opt = optim.SGD(self.parameters(), lr=lr)
+
         for epoch in range(epochs):
             for i in range((n - 1) // n_batch + 1):
                 start_i = i * n_batch
@@ -92,9 +95,6 @@ class MnistLogistic(nn.Module):
                 XW = self(X_)
 
                 loss = self.loss_fn(XW, y_)
-
                 loss.backward()
-                with torch.no_grad():
-                    for param in self.parameters():
-                        param -= param.grad * lr
-                    self.zero_grad()
+                opt.step()
+                opt.zero_grad()
