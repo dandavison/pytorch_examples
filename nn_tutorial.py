@@ -6,6 +6,7 @@ from pathlib import Path
 import numpy as np
 import requests
 import torch
+import torch.nn.functional as F
 
 
 def get_data():
@@ -59,35 +60,14 @@ class NeuralNetwork:
         self.Weights.requires_grad_()
         self.bias = torch.zeros(10, requires_grad=True)
 
-    def predict(self, X):  # x -> yhat
+    def forward(self, X):  # X -> XW
         """
         This maps observation vectors x in R^{784} to output yp vectors in R^{10}.
         """
-        return self.activation(X @ self.Weights + self.bias)
+        return X @ self.Weights + self.bias
 
-    @staticmethod
-    def log_softmax(XW):  # XW -> Yp
-        """
-        This is basically an extension of the logistic transformation to the case of >2 classes. It
-        maps the output of the pure linear model (x @ w + b, a vector in R^{10}) to a
-        normalized (sums to 1) output vector in R^{10}. In log space.
-        """
-        return XW - XW.exp().sum(-1).log().unsqueeze(-1)
-
-    @staticmethod
-    def negloglike(Yp, y):  # (n x K) -> (n) -> R
-        """
-        We can interpret the output of the model for observation i (yp_i) as a vector of
-        probabilities, one for each category. So the loss associated with predictions yhat is the
-        product of the probabilities of the true category, across all observations. In log space,
-        and we want the loss to be large when the probability is small (very negative in log
-        space), so minus sign.
-        """
-        n, = y.shape
-        return -Yp[range(n), y].mean()  # why not sum?
-
-    activation = log_softmax
-    loss_fn = negloglike
+    # cross_entropy combines log softmax activation with negative log likelihood.
+    loss_fn = staticmethod(F.cross_entropy)
 
     @staticmethod
     def accuracy(Yp, y):
@@ -106,8 +86,8 @@ class NeuralNetwork:
                 end_i = start_i + n_batch
                 X_ = X[start_i:end_i]
                 y_ = y[start_i:end_i]
-                Yp = self.predict(X_)
-                loss = self.loss_fn(Yp, y_)
+                XW = self.forward(X_)
+                loss = self.loss_fn(XW, y_)
 
                 loss.backward()
                 with torch.no_grad():

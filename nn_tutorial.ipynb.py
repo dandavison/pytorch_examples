@@ -37,10 +37,10 @@ yp.shape, yp[0]
 # -
 
 model = nt.NeuralNetwork()
-yp = model.predict(x)
-model.loss_fn(yp, y), model.accuracy(yp, y)
+XW = model.forward(x)
+model.loss_fn(XW, y), model.accuracy(yp, y)
 
 model.fit(x_train, y_train)
 
-yp = model.predict(x)
-model.loss_fn(yp, y), model.accuracy(yp, y)
+XW = model.forward(x)
+model.loss_fn(XW, y), model.accuracy(yp, y)

@@ -306,9 +306,7 @@ import nn_tutorial as nt
 torch.manual_seed(RNG_SEED)
 model = nt.NeuralNetwork()
 model.fit(x_train, y_train)
-print(model.loss_fn(model.predict(xb), yb), model.accuracy(model.predict(xb), yb))
-
-exit(0)
+print(model.loss_fn(model.forward(xb), yb), model.accuracy(model.forward(xb), yb))
 
 # Using torch.nn.functional
 # ------------------------------
@@ -352,6 +350,8 @@ def model(xb):
 #
 
 print(loss_func(model(xb), yb), accuracy(model(xb), yb))
+
+exit(0)
 
 # Refactor using nn.Module
 # -----------------------------
