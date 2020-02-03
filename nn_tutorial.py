@@ -9,6 +9,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torch import optim
+from torch.utils.data import TensorDataset
 
 
 def get_data():
@@ -76,19 +77,18 @@ class MnistLogistic(nn.Module):
         return (yhat == y).float().mean()
 
     def fit(self, X, y):
+
         lr = 0.5  # learning rate
         epochs = 2  # how many epochs to train for
         n, d = X.shape
         n_batch = 64
 
+        train_ds = TensorDataset(X, y)
         opt = optim.SGD(self.parameters(), lr=lr)
 
         for epoch in range(epochs):
             for i in range((n - 1) // n_batch + 1):
-                start_i = i * n_batch
-                end_i = start_i + n_batch
-                X_ = X[start_i:end_i]
-                y_ = y[start_i:end_i]
+                X_, y_ = train_ds[i * n_batch : (i + 1) * n_batch]
 
                 # This looks odd; I guess one is not intended to implement a fit
                 # method on a Module subclass, or indeed any method that calls __call__.
