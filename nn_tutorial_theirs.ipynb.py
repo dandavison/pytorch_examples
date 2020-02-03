@@ -301,12 +301,18 @@ for epoch in range(epochs):
 print(loss_func(model(xb), yb), accuracy(model(xb), yb))
 
 print("Mine")
+from torch import optim
+import torch.nn.functional as F
 import nn_tutorial as nt
 
 torch.manual_seed(RNG_SEED)
-model = nt.MnistLogistic()
-model.fit(x_train, y_train, x_valid, y_valid)
-print(model.loss_fn(model(xb), yb), model.accuracy(model(xb), yb))
+
+train_dl, valid_dl = nt.get_data(n_batch=64)
+model, loss_fn = nt.train_logistic(train_dl, valid_dl)
+print(loss_fn(model(xb), yb), nt.accuracy(model(xb), yb))
+
+exit(0)
+
 
 # Using torch.nn.functional
 # ------------------------------
@@ -350,8 +356,6 @@ def model(xb):
 #
 
 print(loss_func(model(xb), yb), accuracy(model(xb), yb))
-
-exit(0)
 
 # Refactor using nn.Module
 # -----------------------------

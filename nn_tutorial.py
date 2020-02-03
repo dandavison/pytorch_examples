@@ -13,25 +13,6 @@ from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
 
 
-def get_data():
-    DATA_PATH = Path("data")
-    PATH = DATA_PATH / "mnist"
-
-    PATH.mkdir(parents=True, exist_ok=True)
-
-    URL = "http://deeplearning.net/data/mnist/"
-    FILENAME = "mnist.pkl.gz"
-
-    if not (PATH / FILENAME).exists():
-        content = requests.get(URL + FILENAME).content
-        (PATH / FILENAME).open("wb").write(content)
-
-    with gzip.open((PATH / FILENAME).as_posix(), "rb") as f:
-        ((x_train, y_train), (x_valid, y_valid), _) = pickle.load(f, encoding="latin-1")
-
-    return tuple(map(torch.tensor, (x_train, y_train, x_valid, y_valid)))
-
-
 class MnistLogistic(nn.Module):
     """
     Multinomial Logistic regression implemented as a neural network.
@@ -69,37 +50,63 @@ class MnistLogistic(nn.Module):
         """
         return self.linear_layer(X)
 
-    # cross_entropy combines log softmax activation with negative log likelihood.
-    loss_fn = staticmethod(F.cross_entropy)
 
-    @staticmethod
-    def accuracy(Yp, y):
-        yhat = torch.argmax(Yp, dim=1)
-        return (yhat == y).float().mean()
+def accuracy(Yp, y):
+    yhat = torch.argmax(Yp, dim=1)
+    return (yhat == y).float().mean()
 
-    def fit(self, X_train, y_train, X_valid, y_valid):
-        lr = 0.5  # learning rate
-        epochs = 2  # how many epochs to train for
-        n, d = X_train.shape
-        n_batch = 64
 
-        train_dl = DataLoader(TensorDataset(X_train, y_train), batch_size=n_batch, shuffle=True)
-        valid_dl = DataLoader(TensorDataset(X_valid, y_valid), batch_size=n_batch * 2)
+def fit(model, train_dl, valid_dl, epochs, loss_fn, opt):
+    for epoch in range(epochs):
+        model.train()
+        for X_, y_ in train_dl:
+            loss = loss_fn(model(X_), y_)
+            loss.backward()
+            opt.step()
+            opt.zero_grad()
 
-        opt = optim.SGD(self.parameters(), lr=lr)
+        model.eval()
+        with torch.no_grad():
+            valid_loss = sum(loss_fn(model(X_), y_) for (X_, y_) in valid_dl) / len(valid_dl)
+            valid_accuracy = sum(accuracy(model(X_), y_) for (X_, y_) in valid_dl) / len(valid_dl)
 
-        for epoch in range(epochs):
-            self.train()
-            for X_, y_ in train_dl:
-                loss = self.loss_fn(self(X_), y_)
-                loss.backward()
-                opt.step()
-                opt.zero_grad()
+        print("validation:", epoch, valid_loss, valid_accuracy)
 
-            self.eval()
-            with torch.no_grad():
-                valid_loss = sum(self.loss_fn(self(X_), y_) for (X_, y_) in valid_dl) / len(
-                    valid_dl
-                )
 
-            print("validation loss", epoch, valid_loss)
+def get_data(n_batch):
+    DATA_PATH = Path("data")
+    PATH = DATA_PATH / "mnist"
+
+    PATH.mkdir(parents=True, exist_ok=True)
+
+    URL = "http://deeplearning.net/data/mnist/"
+    FILENAME = "mnist.pkl.gz"
+
+    if not (PATH / FILENAME).exists():
+        content = requests.get(URL + FILENAME).content
+        (PATH / FILENAME).open("wb").write(content)
+
+    with gzip.open((PATH / FILENAME).as_posix(), "rb") as f:
+        ((X_train, y_train), (X_valid, y_valid), _) = pickle.load(f, encoding="latin-1")
+
+    (X_train, y_train, X_valid, y_valid) = map(torch.tensor, (X_train, y_train, X_valid, y_valid))
+    train_dl = DataLoader(TensorDataset(X_train, y_train), batch_size=n_batch, shuffle=True)
+    valid_dl = DataLoader(TensorDataset(X_valid, y_valid), batch_size=n_batch * 2)
+
+    return train_dl, valid_dl
+
+
+def train_logistic(train_dl, valid_dl):
+    model = MnistLogistic()
+    loss_fn = F.cross_entropy
+    opt = optim.SGD(model.parameters(), lr=0.5)
+    fit(model, train_dl, valid_dl, epochs=2, loss_fn=loss_fn, opt=opt)
+    return model, loss_fn
+
+
+
+
+if __name__ == "__main__":
+    train_dl, valid_dl = get_data(n_batch=64)
+    train_logistic(train_dl, valid_dl)
+    train_cnn(train_dl, valid_dl)
