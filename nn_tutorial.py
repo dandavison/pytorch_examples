@@ -9,6 +9,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 from torch import optim
+from torch.utils.data import DataLoader
 from torch.utils.data import TensorDataset
 
 
@@ -76,25 +77,19 @@ class MnistLogistic(nn.Module):
         yhat = torch.argmax(Yp, dim=1)
         return (yhat == y).float().mean()
 
-    def fit(self, X, y):
-
+    def fit(self, X_train, y_train):
         lr = 0.5  # learning rate
         epochs = 2  # how many epochs to train for
-        n, d = X.shape
+        n, d = X_train.shape
         n_batch = 64
 
-        train_ds = TensorDataset(X, y)
+        train_dl = DataLoader(TensorDataset(X_train, y_train), batch_size=n_batch)
+
         opt = optim.SGD(self.parameters(), lr=lr)
 
         for epoch in range(epochs):
-            for i in range((n - 1) // n_batch + 1):
-                X_, y_ = train_ds[i * n_batch : (i + 1) * n_batch]
-
-                # This looks odd; I guess one is not intended to implement a fit
-                # method on a Module subclass, or indeed any method that calls __call__.
-                XW = self(X_)
-
-                loss = self.loss_fn(XW, y_)
+            for X_, y_ in train_dl:
+                loss = self.loss_fn(self(X_), y_)
                 loss.backward()
                 opt.step()
                 opt.zero_grad()
