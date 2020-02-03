@@ -304,9 +304,9 @@ print("Mine")
 import nn_tutorial as nt
 
 torch.manual_seed(RNG_SEED)
-model = nt.NeuralNetwork()
+model = nt.MnistLogistic()
 model.fit(x_train, y_train)
-print(model.loss_fn(model.forward(xb), yb), model.accuracy(model.forward(xb), yb))
+print(model.loss_fn(model(xb), yb), model.accuracy(model(xb), yb))
 
 # Using torch.nn.functional
 # ------------------------------

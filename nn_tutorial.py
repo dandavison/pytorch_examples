@@ -7,6 +7,7 @@ import numpy as np
 import requests
 import torch
 import torch.nn.functional as F
+from torch import nn
 
 
 def get_data():
@@ -28,7 +29,7 @@ def get_data():
     return tuple(map(torch.tensor, (x_train, y_train, x_valid, y_valid)))
 
 
-class NeuralNetwork:
+class MnistLogistic(nn.Module):
     """
     Multinomial Logistic regression implemented as a neural network.
 
@@ -56,9 +57,11 @@ class NeuralNetwork:
     """
 
     def __init__(self):
-        self.Weights = torch.randn(784, 10) / math.sqrt(784)  # "Xavier initialisation"
-        self.Weights.requires_grad_()
-        self.bias = torch.zeros(10, requires_grad=True)
+        super().__init__()
+        self.Weights = nn.Parameter(
+            torch.randn(784, 10) / math.sqrt(784)
+        )  # "Xavier initialisation" http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf
+        self.bias = nn.Parameter(torch.zeros(10))
 
     def forward(self, X):  # X -> XW
         """
@@ -86,12 +89,11 @@ class NeuralNetwork:
                 end_i = start_i + n_batch
                 X_ = X[start_i:end_i]
                 y_ = y[start_i:end_i]
-                XW = self.forward(X_)
+                XW = self(X_)
                 loss = self.loss_fn(XW, y_)
 
                 loss.backward()
                 with torch.no_grad():
-                    self.Weights -= self.Weights.grad * lr
-                    self.bias -= self.bias.grad * lr
-                    self.Weights.grad.zero_()
-                    self.bias.grad.zero_()
+                    for param in self.parameters():
+                        param -= param.grad * lr
+                    self.zero_grad()
