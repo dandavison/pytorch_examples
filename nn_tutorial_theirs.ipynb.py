@@ -311,7 +311,8 @@ train_dl, valid_dl = nt.get_data(n_batch=64)
 model, loss_fn = nt.train_logistic(train_dl, valid_dl)
 print(loss_fn(model(xb), yb), nt.accuracy(model(xb), yb))
 model, loss_fn = nt.train_cnn(train_dl, valid_dl)
-print(loss_fn(model(xb), yb), nt.accuracy(model(xb), yb))
+xb_for_cnn = xb.view(-1, 1, 28, 28)
+print(loss_fn(model(xb_for_cnn), yb), nt.accuracy(model(xb_for_cnn), yb))
 
 exit(0)
 

@@ -65,14 +65,13 @@ class MnistLogistic(nn.Module):
 
 
 mnist_cnn = nn.Sequential(
-    Lambda(lambda X: X.view(-1, 1, 28, 28)),
     nn.Conv2d(1, 16, kernel_size=3, stride=2, padding=1),
     nn.ReLU(),
     nn.Conv2d(16, 16, kernel_size=3, stride=2, padding=1),
     nn.ReLU(),
     nn.Conv2d(16, 10, kernel_size=3, stride=2, padding=1),
     nn.ReLU(),
-    nn.AvgPool2d(4),
+    nn.AdaptiveAvgPool2d(1),
     Lambda(lambda X: X.view(X.size(0), -1)),
 )
 
@@ -131,6 +130,16 @@ def train_logistic(train_dl, valid_dl):
 
 
 def train_cnn(train_dl, valid_dl):
+    def resized(dl):
+        items = []
+        for X, y in dl:
+            X = X.view(-1, 1, 28, 28)
+            items.append((X, y))
+        return items
+
+    train_dl = resized(train_dl)
+    valid_dl = resized(valid_dl)
+
     model = mnist_cnn
     loss_fn = F.cross_entropy
     opt = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
