@@ -51,6 +51,22 @@ class MnistLogistic(nn.Module):
         return self.linear_layer(X)
 
 
+class MnistCNN(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.conv1 = nn.Conv2d(1, 16, kernel_size=3, stride=2, padding=1)
+        self.conv2 = nn.Conv2d(16, 16, kernel_size=3, stride=2, padding=1)
+        self.conv3 = nn.Conv2d(16, 10, kernel_size=3, stride=2, padding=1)
+
+    def forward(self, X):
+        X = X.view(-1, 1, 28, 28)
+        X = F.relu(self.conv1(X))
+        X = F.relu(self.conv2(X))
+        X = F.relu(self.conv3(X))
+        X = F.avg_pool2d(X, 4)
+        return X.view(-1, X.size(1))
+
+
 def accuracy(Yp, y):
     yhat = torch.argmax(Yp, dim=1)
     return (yhat == y).float().mean()
@@ -104,6 +120,12 @@ def train_logistic(train_dl, valid_dl):
     return model, loss_fn
 
 
+def train_cnn(train_dl, valid_dl):
+    model = MnistCNN()
+    loss_fn = F.cross_entropy
+    opt = optim.SGD(model.parameters(), lr=0.1, momentum=0.9)
+    fit(model, train_dl, valid_dl, epochs=2, loss_fn=loss_fn, opt=opt)
+    return model, loss_fn
 
 
 if __name__ == "__main__":

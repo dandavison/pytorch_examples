@@ -310,6 +310,8 @@ torch.manual_seed(RNG_SEED)
 train_dl, valid_dl = nt.get_data(n_batch=64)
 model, loss_fn = nt.train_logistic(train_dl, valid_dl)
 print(loss_fn(model(xb), yb), nt.accuracy(model(xb), yb))
+model, loss_fn = nt.train_cnn(train_dl, valid_dl)
+print(loss_fn(model(xb), yb), nt.accuracy(model(xb), yb))
 
 exit(0)
 
