@@ -58,16 +58,13 @@ class MnistLogistic(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.Weights = nn.Parameter(
-            torch.randn(784, 10) / math.sqrt(784)
-        )  # "Xavier initialisation" http://proceedings.mlr.press/v9/glorot10a/glorot10a.pdf
-        self.bias = nn.Parameter(torch.zeros(10))
+        self.linear_layer = nn.Linear(784, 10)
 
     def forward(self, X):  # X -> XW
         """
         This maps observation vectors x in R^{784} to output yp vectors in R^{10}.
         """
-        return X @ self.Weights + self.bias
+        return self.linear_layer(X)
 
     # cross_entropy combines log softmax activation with negative log likelihood.
     loss_fn = staticmethod(F.cross_entropy)
@@ -89,7 +86,11 @@ class MnistLogistic(nn.Module):
                 end_i = start_i + n_batch
                 X_ = X[start_i:end_i]
                 y_ = y[start_i:end_i]
+
+                # This looks odd; I guess one is not intended to implement a fit
+                # method on a Module subclass, or indeed any method that calls __call__.
                 XW = self(X_)
+
                 loss = self.loss_fn(XW, y_)
 
                 loss.backward()
